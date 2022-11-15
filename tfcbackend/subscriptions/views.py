@@ -8,8 +8,8 @@ from subscriptions.models import SubscriptionPlan, UserSubscription, Card, Payme
 from accounts.models import User
 from subscriptions.serializers import PaymentSerializer
 from datetime import datetime
-from datetime import timedelta
-from django.utils.timezone import now, localdate, localtime, make_aware
+from django.utils.timezone import localdate
+from subscriptions.utils import make_payment, calculate_next_payment_day, get_curr_datetime
 from studios.models import ClassInstance
 
 # TODO: User IS ALLOWED to be in classes on the day of cancellation to prevent users being mad
@@ -52,13 +52,14 @@ class SubscribeView(APIView):
         card = result[2]
         # Create user subscription object
         curr_date = localdate()
-        next_payment_day = _calculate_next_payment_day(curr_date, subscription_plan)
+        next_payment_day = calculate_next_payment_day(curr_date, subscription_plan)
         user_subscription = UserSubscription(user=user,
                                              payment_card=card, next_payment_day=next_payment_day,
                                              subscription_plan=subscription_plan)
         user_subscription.save()
 
-        # TODO: Make first payment
+        # Make first payment
+        make_payment(user_subscription)
 
         return Response({
             'status': 'success'
@@ -111,8 +112,11 @@ class PaymentHistoryView(ListAPIView):
 
     def get_queryset(self):
         user = get_object_or_404(User, id=self.kwargs['user_id'])
-        curr_dt = _get_curr_datetime()
-        payments = Payment.objects.filter(user=user, date_and_time__lt=curr_dt)
+        # curr_dt = get_curr_datetime()
+        # payments = Payment.objects.filter(user=user, date_and_time__lt=curr_dt)
+        # Only need to filter for user because payment objects only exist if a payment
+        # was made in the past
+        payments = Payment.objects.filter(user=user)
         return payments.order_by('date_and_time')
 
 
@@ -237,31 +241,3 @@ def _create_card(card_number, cardholder_name, expiration_date_str, cvv):
     except ValidationError:
         return ('status', 'card information is invalid', None)
 
-
-def _get_curr_datetime():
-    curr_date = localdate()
-    curr_time = localtime().time()
-    return make_aware(datetime.combine(curr_date, curr_time))
-
-
-def _calculate_next_payment_day(date, subscription_plan):
-    if subscription_plan.frequency == 0:
-        # Weekly
-        date += timedelta(weeks=1)
-    elif subscription_plan.frequency == 1:
-        # Bi-Weekly
-        date += timedelta(weeks=2)
-    elif subscription_plan.frequency == 2:
-        # Monthly
-        date += timedelta(weeks=4)
-    elif subscription_plan.frequency == 3:
-        # Every 3 months
-        date += timedelta(weeks=12)
-    elif subscription_plan.frequency == 4:
-        # Every 6 months
-        date += timedelta(weeks=24)
-    else:
-        # Every year
-        date += timedelta(weeks=52)
-
-    return date
