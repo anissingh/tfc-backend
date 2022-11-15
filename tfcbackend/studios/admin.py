@@ -1,8 +1,11 @@
 from django.contrib import admin
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from studios.models import Studio, StudioImage, StudioAmenities, Class, Keyword, ClassInstance
 from studios.models import ClassTime
-from django.utils.timezone import make_aware
 import datetime
+from django.utils.timezone import make_aware, localdate, localtime
+from studios.utils import get_next_weekday, get_curr_datetime
 
 
 # Register your models here.
@@ -17,8 +20,7 @@ class StudioAmenitiesInline(admin.TabularInline):
 
 
 class StudioAdmin(admin.ModelAdmin):
-    readonly_fields = ['id']
-    fields = ['id', 'name', 'address', 'latitude', 'longitude', 'postal_code', 'phone']
+    fields = ['name', 'address', 'latitude', 'longitude', 'postal_code', 'phone']
     list_display = ['name', 'id', 'address', 'latitude', 'longitude', 'postal_code', 'phone']
     inlines = [StudioImageInline, StudioAmenitiesInline]
 
@@ -36,38 +38,87 @@ class ClassTimeInline(admin.TabularInline):
 
 
 class ClassAdmin(admin.ModelAdmin):
+    readonly_fields = []
     fields = ['name', 'description', 'studio', 'coach', 'capacity', 'start_date', 'end_date']
-    list_display = ['name', 'studio', 'coach', 'start_date', 'end_date', 'capacity']
+    list_display = ['name', 'studio', 'coach', 'start_date', 'end_date', 'capacity',
+                    'active']
     inlines = [ClassTimeInline, KeywordInline]
 
-    def save_model(self, request, obj, form, change):
-        # TODO: Don't create new classes if no ClassTime or Class attributes were edited
-        # TODO: Remove old classes and create new ones when ClassTime objects are updated
-        super().save_model(request, obj, form, change)
-        # obj.save()
-        if change:
-            self._generate_class_instances(obj)
+    @admin.display(boolean=True, description='All Future Classes Active')
+    def active(self, obj):
+        return not obj.cancel_all_future
 
-    def _generate_class_instances(self, obj):
-        class_times = ClassTime.objects.filter(cls=obj)
+    def get_readonly_fields(self, request, obj=None):
+        if not obj:
+            return self.readonly_fields + ['cancel_all_future']
+        else:
+            return self.readonly_fields + ['start_date']
 
-        for ct in class_times:
-            curr_date = self._get_next_weekday(obj.start_date, ct.day)
-            while curr_date < obj.end_date:
-                start_date_and_time = make_aware(datetime.datetime.combine(curr_date, ct.start_time))
-                ci = ClassInstance(cls=obj, date=curr_date, start_time=ct.start_time,
-                                   start_date_and_time=start_date_and_time, end_time=ct.end_time,
-                                   capacity=obj.capacity, coach=obj.coach)
-                ci.save()
-                curr_date = curr_date + datetime.timedelta(7)
+    def get_fields(self, request, obj=None):
+        if obj:
+            return self.fields + ['cancel_all_future']
+        else:
+            return self.fields
 
-    def _get_next_weekday(self, date, weekday):
-        days_ahead = weekday - date.weekday()
-        if days_ahead < 0:  # Target day already happened this week
-            days_ahead += 7
-        return date + datetime.timedelta(days_ahead)
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        if obj and obj.end_date < localdate():
+            return False
+        else:
+            return super().has_change_permission(request, obj)
+
+
+class ClassInstanceAdmin(admin.ModelAdmin):
+    readonly_fields = []
+    list_display = ['cls', 'date', 'start_time', 'end_time', 'enrolled', 'capacity', 'coach',
+                    'active']
+
+    @admin.display(ordering='cls__name', description='Class Name')
+    def get_author(self, obj):
+        return obj.cls.name
+
+    @admin.display(boolean=True)
+    def active(self, obj):
+        return not obj.cancelled
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        if obj and obj.start_date_and_time < get_curr_datetime():
+            return False
+        else:
+            return super().has_change_permission(request, obj)
+
+
+@receiver(post_save, sender=ClassTime)
+def generate_class_instances(sender, instance, created, **kwargs):
+    ct = instance
+    obj = instance.cls
+    if created:
+        _generate_class_instances_helper(obj, ct)
+
+
+def _generate_class_instances_helper(obj, ct):
+    if obj.start_date.weekday() == ct.day and obj.start_date == localdate() and \
+            ct.start_time < localtime().time():
+        curr_date = localdate() + datetime.timedelta(weeks=1)
+    else:
+        curr_date = get_next_weekday(obj.start_date, ct.day)
+    while curr_date < obj.end_date:
+        start_date_and_time = make_aware(datetime.datetime.combine(curr_date, ct.start_time))
+        ci = ClassInstance(cls=obj, date=curr_date, start_time=ct.start_time,
+                           start_date_and_time=start_date_and_time, end_time=ct.end_time,
+                           capacity=obj.capacity, coach=obj.coach)
+        ci.save()
+        curr_date = curr_date + datetime.timedelta(7)
 
 
 admin.site.register(Studio, StudioAdmin)
 admin.site.register(Class, ClassAdmin)
-admin.site.register(ClassInstance)
+admin.site.register(ClassInstance, ClassInstanceAdmin)

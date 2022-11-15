@@ -12,6 +12,7 @@ from studios.calculator import get_nearby_locs, convert_date_to_django_date
 from django.utils.dateparse import parse_date
 from django.utils.timezone import now, localtime, localdate, make_aware
 import datetime
+from studios.utils import get_curr_datetime
 
 
 # Create your views here.
@@ -77,12 +78,19 @@ class EnrollOneView(APIView):
         date = parse_date(date_str)
         # If no class takes place on this day (class was cancelled, class not offered this day,
         # etc.)
-        if not ClassInstance.objects.filter(cls=cls, date=date).exists():
+        if not ClassInstance.objects.filter(cls=cls, date=date, cancelled=False).exists():
             return Response({
                 'status': 'this class is not offered on this day'
             })
 
-        class_instance = ClassInstance.objects.get(cls=cls, date=date)
+        class_instance = ClassInstance.objects.get(cls=cls, date=date, cancelled=False)
+
+        # Make sure class has not started
+        if class_instance.start_date_and_time < get_curr_datetime():
+            return Response({
+                'status': 'class has already begun'
+            })
+
         # Make sure class is not full
         if class_instance.enrolled == class_instance.capacity:
             return Response({
@@ -122,18 +130,16 @@ class EnrollAllView(APIView):
 
         user = User.objects.get(email=email)
         response_msg = 'success'
-        curr_date = localdate()
-        curr_time = localtime().time()
-        curr_date_and_time = make_aware(datetime.datetime.combine(curr_date, curr_time))
+        curr_date_and_time = get_curr_datetime()
         cls_to_enroll = ClassInstance.objects.filter(cls=cls,
                                                      start_date_and_time__gte=curr_date_and_time)
         enrolled_in_one = False
 
         for cls in cls_to_enroll:
             # Make sure class is not full and user is not already enrolled in this class
-            if cls.enrolled == cls.capacity or cls in user.enrolled_classes.all():
-                response_msg = 'enrolled in all classes with availability that user was not ' \
-                               'already enrolled in'
+            if cls.enrolled == cls.capacity or cls in user.enrolled_classes.all() or cls.cancelled:
+                response_msg = 'enrolled in all non-cancelled classes with availability ' \
+                               'that user was not already enrolled in'
                 continue
             else:
                 # If we make it here, we can enroll the user in the class
@@ -184,14 +190,25 @@ class DropOneView(APIView):
                 'status': 'user not enrolled in this class'
             })
 
+        # Make sure class has not started
+        if class_instance.start_date_and_time < get_curr_datetime():
+            return Response({
+                'status': 'class has already begun'
+            })
+
         # If we make it here, we can drop the user from this class
         class_instance.enrolled -= 1
         class_instance.save()
         user.enrolled_classes.remove(class_instance)
 
-        return Response({
-            'status': 'success'
-        })
+        if class_instance.cancelled:
+            return Response({
+                'status': 'successfully dropped cancelled class'
+            })
+        else:
+            return Response({
+                'status': 'success'
+            })
 
 
 class DropAllView(APIView):
@@ -246,32 +263,35 @@ class StudioClassScheduleView(ListAPIView):
     def get_queryset(self):
         studio = get_object_or_404(Studio, id=self.kwargs['studio_id'])
         classes = list(Class.objects.filter(studio=studio))
-        curr_date_and_time = _get_curr_datetime()
+        curr_date_and_time = get_curr_datetime()
         class_instances = ClassInstance.objects.filter(cls__in=classes,
-                                                       start_date_and_time__gte=curr_date_and_time)
+                                                       start_date_and_time__gte=curr_date_and_time,
+                                                       cancelled=False)
         return class_instances.order_by('start_date_and_time')
 
 
 class UserClassScheduleView(ListAPIView):
+    permission_classes = [IsAuthenticated]
     serializer_class = ClassInstanceSerializer
     model = ClassInstance
     paginate_by = 100
 
     def get_queryset(self):
         user = get_object_or_404(User, id=self.kwargs['user_id'])
-        curr_dt = _get_curr_datetime()
+        curr_dt = get_curr_datetime()
         class_instances = user.enrolled_classes.all().filter(start_date_and_time__gte=curr_dt)
         return class_instances.order_by('start_date_and_time')
 
 
 class UserClassHistoryView(ListAPIView):
+    permission_classes = [IsAuthenticated]
     serializer_class = ClassInstanceSerializer
     model = ClassInstance
     paginate_by = 100
 
     def get_queryset(self):
         user = get_object_or_404(User, id=self.kwargs['user_id'])
-        curr_dt = _get_curr_datetime()
+        curr_dt = get_curr_datetime()
         class_instances = user.enrolled_classes.all().filter(start_date_and_time__lt=curr_dt)
         return class_instances.order_by('start_date_and_time')
 
@@ -283,6 +303,9 @@ def _validate_enroll_or_drop_one_request(cls, email, date_str):
     date = parse_date(date_str)
     if not date:
         return ('status', 'invalid date')
+
+    if date < localdate():
+        return ('status', 'date has passed')
 
     if cls.end_date < date:
         return ('status', 'date must be before class stops being offered')
@@ -296,9 +319,3 @@ def _validate_enroll_or_drop_all_request(email):
     if not User.objects.filter(email=email).exists():
         return ('status', 'no user with this email exists')
     return None
-
-
-def _get_curr_datetime():
-    curr_date = localdate()
-    curr_time = localtime().time()
-    return make_aware(datetime.datetime.combine(curr_date, curr_time))

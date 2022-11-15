@@ -3,6 +3,8 @@ from django.db import models
 from accounts.models import User
 from django.utils.timezone import localdate
 
+# TODO: Do not allow users to drop/enroll classes without a subscription
+
 
 # Create your models here.
 class SubscriptionPlan(models.Model):
