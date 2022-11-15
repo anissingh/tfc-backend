@@ -4,7 +4,7 @@ from django.contrib.auth.base_user import BaseUserManager
 from django.core.validators import validate_email
 from studios.models import ClassInstance
 
-# TODO: Remove blank and null = true from avatar
+# TODO: phone number = charfield?
 
 
 class UserManager(BaseUserManager):
@@ -46,7 +46,7 @@ class User(AbstractUser):
     username = None
     email = models.EmailField(verbose_name='email address', unique=True)
     phone = models.CharField(verbose_name='phone number', max_length=10, unique=True)
-    avatar = models.ImageField(upload_to='images/', blank=True, null=True)
+    avatar = models.ImageField(upload_to='account-images/', default='account-images/default.png')
     enrolled_classes = models.ManyToManyField(to=ClassInstance)
 
     objects = UserManager()

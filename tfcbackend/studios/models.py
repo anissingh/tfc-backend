@@ -7,35 +7,37 @@ from studios.utils import get_next_weekday, get_curr_datetime
 from django.utils.timezone import localdate, make_aware, localtime
 import datetime
 
-# TODO: Remove blank and null = True from StudioImage image
-
-
-# Validators
-def validate_latitude(value):
-    if -90.0 <= value <= 90.0:
-        return value
-    else:
-        raise ValidationError('Latitude must be between -90 and 90 degrees.')
-
-
-def validate_longitude(value):
-    if -180.0 <= value <= 180.0:
-        return value
-    else:
-        raise ValidationError('Longitude must be between -180 and 180 degrees.')
-
 
 # Create your models here.
 class Studio(models.Model):
     name = models.CharField(max_length=200)
     address = models.CharField(max_length=200)
-    latitude = models.DecimalField(max_digits=10, decimal_places=8, validators=[validate_latitude])
-    longitude = models.DecimalField(max_digits=11, decimal_places=8, validators=[validate_longitude])
+    latitude = models.DecimalField(max_digits=10, decimal_places=8)
+    longitude = models.DecimalField(max_digits=11, decimal_places=8)
     postal_code = models.CharField(max_length=6, unique=True)
     phone = models.CharField(max_length=10)
 
     def __str__(self):
         return self.name
+
+    def clean(self):
+        super().clean()
+        errors = {}
+        if self.latitude < -90.0 or self.latitude > 90.0:
+            errors['latitude'] = 'Latitude must be between -90 and 90 degrees.'
+        if self.longitude < -180.0 or self.longitude > 180.0:
+            errors['longitude'] = 'Longitude must be between -180 and 180 degrees.'
+        if not self.phone.isnumeric() or len(self.phone) < 10:
+            errors['phone'] = 'Invalid phone number.'
+        if not validate_postal_code(self.postal_code):
+            errors['postal_code'] = 'Invalid postal code.'
+
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save()
 
     class Meta:
         verbose_name = 'Studio'
@@ -44,7 +46,7 @@ class Studio(models.Model):
 
 class StudioImage(models.Model):
     studio = models.ForeignKey(to=Studio, on_delete=models.CASCADE)
-    image = models.ImageField(upload_to='images/', blank=True, null=True)
+    image = models.ImageField(upload_to='studio-images/', default='studio-images/default.jpg')
 
     class Meta:
         verbose_name = 'Studio Image'
@@ -304,6 +306,28 @@ def update_capacity(cls, old_capacity):
                                                 capacity=old_capacity)
     for ci in ci_to_update:
         ci.update_capacity(cls.capacity)
+
+
+def validate_postal_code(postal_code):
+    if len(postal_code) != 6:
+        return False
+    if not postal_code.isalnum():
+        return False
+
+    digits = 0
+    letters = 0
+    for c in postal_code:
+        if c.isdigit():
+            digits += 1
+        elif c.isupper():
+            letters += 1
+        else:
+            return False
+
+    if digits != 3 or letters != 3:
+        return False
+
+    return True
 
 
 # Code from: https://stackoverflow.com/questions/19703975/django-sort-by-distance
