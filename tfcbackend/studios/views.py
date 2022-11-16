@@ -13,6 +13,7 @@ from django.utils.dateparse import parse_date
 from django.utils.timezone import now, localtime, localdate, make_aware
 import datetime
 from studios.utils import get_curr_datetime
+from subscriptions.models import UserSubscription
 
 
 # Create your views here.
@@ -23,43 +24,32 @@ class StudioInfoView(RetrieveAPIView):
         return get_object_or_404(Studio, id=self.kwargs['studio_id'])
 
 
-class ClosestStudiosView(APIView):
-    # TODO: Paginate
+class ClosestStudioView(ListAPIView):
+    serializer_class = StudioSerializer
+    model = Studio
+    paginate_by = 100
 
-    def post(self, request, *args, **kwargs):
-        latitude = request.data.get('latitude', '')
-        longitude = request.data.get('longitude', '')
+    def get_queryset(self):
+        latitude = self.request.GET.get('lat', '')
+        longitude = self.request.GET.get('long', '')
 
         if latitude == '' or longitude == '':
-            return Response({
-                'status': 'error'
-            })
+            return Studio.objects.none()
 
         try:
             f_lat = float(latitude)
             f_long = float(longitude)
         except ValueError:
-            return Response({
-                'status': 'error'
-            })
+            return Studio.objects.none()
 
         if not (-90.0 <= f_lat <= 90.0 and -180.0 <= f_long <= 180.0):
-            return Response({
-                'status': 'error'
-            })
+            return Studio.objects.none()
 
         qs = get_nearby_locs(f_lat, f_long)
-
-        serializer = StudioSerializer(qs, many=True)
-
-        return Response({
-            'status': 'success',
-            'data': serializer.data
-        })
+        return qs
 
 
 class EnrollOneView(APIView):
-    # TODO: Only allow this to happen if user has active subscription
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
@@ -114,7 +104,6 @@ class EnrollOneView(APIView):
 
 
 class EnrollAllView(APIView):
-    # TODO: Only allow with active subscription
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
@@ -157,7 +146,6 @@ class EnrollAllView(APIView):
 
 
 class DropOneView(APIView):
-    # TODO: Only allow user to do this if they have a subscription
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
@@ -212,7 +200,6 @@ class DropOneView(APIView):
 
 
 class DropAllView(APIView):
-    # TODO: Ony allow if user has active subscription
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
@@ -300,6 +287,10 @@ def _validate_enroll_or_drop_one_request(cls, email, date_str):
     if not User.objects.filter(email=email).exists():
         return ('status', 'no user with this email exists')
 
+    user = User.objects.get(email=email)
+    if not UserSubscription.objects.filter(user=user).exists():
+        return ('status', 'no subscription')
+
     date = parse_date(date_str)
     if not date:
         return ('status', 'invalid date')
@@ -318,4 +309,9 @@ def _validate_enroll_or_drop_one_request(cls, email, date_str):
 def _validate_enroll_or_drop_all_request(email):
     if not User.objects.filter(email=email).exists():
         return ('status', 'no user with this email exists')
+
+    user = User.objects.get(email=email)
+    if not UserSubscription.objects.filter(user=user).exists():
+        return ('status', 'no subscription')
+
     return None

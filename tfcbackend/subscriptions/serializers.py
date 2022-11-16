@@ -18,9 +18,8 @@ class CardSerializer(serializers.ModelSerializer):
 
 class PaymentSerializer(serializers.ModelSerializer):
 
-    subscription_plan = SubscriptionPlanSerializer()
     card_used = CardSerializer()
 
     class Meta:
         model = Payment
-        fields = ['subscription_plan', 'card_used', 'date_and_time']
+        fields = ['amount', 'card_used', 'date_and_time']

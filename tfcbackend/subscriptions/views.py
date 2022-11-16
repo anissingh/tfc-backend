@@ -12,9 +12,6 @@ from django.utils.timezone import localdate
 from subscriptions.utils import make_payment, calculate_next_payment_day, get_curr_datetime
 from studios.models import ClassInstance
 
-# TODO: User IS ALLOWED to be in classes on the day of cancellation to prevent users being mad
-# TODO: about paying at 6pm so they should be able to attend classes until 6pm on cancellation date
-
 
 # Create your views here.
 class SubscribeView(APIView):
@@ -36,10 +33,10 @@ class SubscribeView(APIView):
             })
 
         user = User.objects.get(email=email)
-        # Check if user already has a subscription
+        # Check if user already has a subscription (cancelled or not)
         if UserSubscription.objects.filter(user=user).exists():
             return Response({
-                'status': 'subscription already exists. update subscription instead'
+                'status': 'a subscription is currently active. update subscription instead'
             })
 
         # If no subscription exists, try to create card
@@ -53,7 +50,7 @@ class SubscribeView(APIView):
         # Create user subscription object
         curr_date = localdate()
         next_payment_day = calculate_next_payment_day(curr_date, subscription_plan)
-        user_subscription = UserSubscription(user=user,
+        user_subscription = UserSubscription(user=user, amount=subscription_plan.amount,
                                              payment_card=card, next_payment_day=next_payment_day,
                                              subscription_plan=subscription_plan)
         user_subscription.save()
@@ -103,7 +100,6 @@ class UpdateCardView(APIView):
         })
 
 
-# TODO: Test
 class PaymentHistoryView(ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = PaymentSerializer
@@ -138,12 +134,17 @@ class FuturePaymentView(APIView):
         if not UserSubscription.objects.filter(user=user).exists():
             return Response({})
 
-        # Otherwise, get next payment info and return it
+        # If the user's subscription is cancelled, return none
         user_subscription = UserSubscription.objects.get(user=user)
+        if not user_subscription.subscription_plan:
+            return Response({
+                'status': 'subscription cancelled'
+            })
+
+        # Otherwise, get next payment info and return it
         payment_info = {
             'next_payment_day': user_subscription.next_payment_day,
-            'plan': user_subscription.subscription_plan.name,
-            'cancelled': user_subscription.cancelled
+            'amount': user_subscription.amount,
         }
 
         return Response({
@@ -177,6 +178,7 @@ class UpdatePaymentView(APIView):
         # Update subscription plan
         user_subscription = UserSubscription.objects.get(user=user)
         user_subscription.subscription_plan = subscription_plan
+        user_subscription.amount = subscription_plan.amount
         user_subscription.save()
 
         return Response({
@@ -205,16 +207,16 @@ class CancelPaymentView(APIView):
 
         # Cancel subscription plan
         user_subscription = UserSubscription.objects.get(user=user)
-        billing_end_day = user_subscription.next_payment_day
-        user_subscription.delete()
+        if user_subscription.subscription_plan is None:
+            return Response({
+                'status': 'subscription plan already cancelled'
+            })
+        user_subscription.subscription_plan = None
+        user_subscription.save()
 
-        # Un-enroll user in any classes they are enrolled in after their billing period ends
-        all_enrolled_classes = user.enrolled_classes.all()
-        enrolled_after_billing = all_enrolled_classes.filter(date__gt=billing_end_day)
-        for class_instance in enrolled_after_billing:
-            user.enrolled_classes.remove(class_instance)
-            class_instance.enrolled -= 1
-            class_instance.save()
+        # Note: User gets unenrolled when next payment is made. This is because the user
+        # may want to re-subscribe, so it does not make sense to unenroll the user before
+        # their subscription is officially over.
 
         return Response({
             'status': 'success'
@@ -240,4 +242,3 @@ def _create_card(card_number, cardholder_name, expiration_date_str, cvv):
         return ('status', 'success', card)
     except ValidationError:
         return ('status', 'card information is invalid', None)
-

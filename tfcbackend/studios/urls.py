@@ -1,5 +1,5 @@
 from django.urls import path
-from studios.views import StudioInfoView, ClosestStudiosView, EnrollOneView, EnrollAllView, \
+from studios.views import StudioInfoView, ClosestStudioView, EnrollOneView, EnrollAllView, \
     DropOneView, DropAllView, StudioClassScheduleView, UserClassScheduleView, UserClassHistoryView
 from studios.search_views import SearchStudioView, SearchStudioClassSchedule
 
@@ -8,7 +8,7 @@ app_name = 'studios'
 
 urlpatterns = [
     path('<int:studio_id>/info/', StudioInfoView.as_view()),
-    path('closest/', ClosestStudiosView.as_view()),
+    path('closest/', ClosestStudioView.as_view()),
     path('classes/<int:class_id>/enroll/one/', EnrollOneView.as_view()),
     path('classes/<int:class_id>/enroll/', EnrollAllView.as_view()),
     path('classes/<int:class_id>/drop/one/', DropOneView.as_view()),

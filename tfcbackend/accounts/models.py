@@ -4,15 +4,14 @@ from django.contrib.auth.base_user import BaseUserManager
 from django.core.validators import validate_email
 from studios.models import ClassInstance
 
-# TODO: phone number = charfield?
-
+# TODO: Validate phone number
 
 class UserManager(BaseUserManager):
     use_in_migrations = True
 
     def _create_user(self, email, password, **extra_fields):
         """
-        Create and save a user with the given email, and password.
+        Create and save a user with the given email and password.
         """
         # Can raise django.core.exceptions.ValidationError
         validate_email(email)
@@ -29,7 +28,7 @@ class UserManager(BaseUserManager):
         return self._create_user(email, password, **extra_fields)
 
     def create_superuser(self, email, password, **extra_fields):
-        """Create and save a SuperUser with the given email and password."""
+        """Create and save a superuser with the given email and password."""
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
 
@@ -44,8 +43,8 @@ class UserManager(BaseUserManager):
 # Create your models here.
 class User(AbstractUser):
     username = None
-    email = models.EmailField(verbose_name='email address', unique=True)
-    phone = models.CharField(verbose_name='phone number', max_length=10, unique=True)
+    email = models.EmailField(verbose_name='Email Address', unique=True)
+    phone = models.CharField(verbose_name='Phone Number', max_length=10, unique=True)
     avatar = models.ImageField(upload_to='account-images/', default='account-images/default.png')
     enrolled_classes = models.ManyToManyField(to=ClassInstance)
 
