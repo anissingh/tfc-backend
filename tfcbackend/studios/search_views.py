@@ -17,25 +17,34 @@ class SearchStudioView(ListAPIView):
         class_names = list(self.request.GET.getlist('class-name'))
         coaches = list(self.request.GET.getlist('coach'))
 
-        # First get all studios
         studios = Studio.objects.all()
+        studio_names = Studio.objects.none()
+        studio_amenities = Studio.objects.none()
+        studio_class_names = Studio.objects.none()
+        studio_coaches = Studio.objects.none()
 
-        # Then begin filtering
-        # TODO: Ignore case-sensitivity?
+        # Begin filtering
         if len(names) > 0:
-            studios = studios.filter(name__in=names)
+            for name in names:
+                studio_names |= studios.filter(name__iexact=name)
+            studios = studio_names
         if len(amenities) > 0:
-            studios = studios.filter(studioamenities__type__in=amenities)
+            for amenity in amenities:
+                studio_amenities |= studios.filter(studioamenities__type__iexact=amenity)
+            studios = studio_amenities
         if len(class_names) > 0:
-            # TODO: What if all classes cancelled? Or class has passed?
-            studios = studios.filter(class__name__in=class_names)
+            for class_name in class_names:
+                studio_class_names |= studios.filter(class__name__iexacxt=class_name)
+            studios = studio_class_names
         if len(coaches) > 0:
-            # TODO: What if all classes cancelled? Or class has passed?
-            classes_with_coach = ClassInstance.objects.filter(coach__in=coaches)
+            classes_with_coach = ClassInstance.objects.none()
+            for coach in coaches:
+                classes_with_coach |= ClassInstance.objects.filter(coach__iexact=coach)
             classes = classes_with_coach.values_list('cls', flat=True).order_by('id')
-            studios = studios.filter(class__in=classes)
+            studio_coaches |= studios.filter(class__in=classes)
+            studios = studio_coaches
 
-        return studios
+        return studios.distinct()
 
 
 class SearchStudioClassSchedule(ListAPIView):
@@ -68,15 +77,19 @@ class SearchStudioClassSchedule(ListAPIView):
             end_time = 'E'
 
         # Search
-        # TODO: Ignore case-sensitivity?
-        # Get all class instances in this studio
         classes = list(Class.objects.filter(studio=studio))
         class_instances = ClassInstance.objects.filter(cls__in=classes)
+        ci_class_names = ClassInstance.objects.none()
+        ci_coaches = ClassInstance.objects.none()
 
         if len(class_names) > 0:
-            class_instances = class_instances.filter(cls__name__in=class_names)
+            for class_name in class_names:
+                ci_class_names |= class_instances.filter(cls__name__iexact=class_name)
+            class_instances = ci_class_names
         if len(coaches) > 0:
-            class_instances = class_instances.filter(coach__in=coaches)
+            for coach in coaches:
+                ci_coaches |= class_instances.filter(coach__iexact=coach)
+            class_instances = ci_coaches
         if len(dates) > 0:
             class_instances = class_instances.filter(date__in=dates)
         if start_time != 'E':

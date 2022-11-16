@@ -30,21 +30,21 @@ class SubscribeView(APIView):
         if not User.objects.filter(email=email).exists():
             return Response({
                 'status': 'no user with this email exists'
-            })
+            }, status=400)
 
         user = User.objects.get(email=email)
         # Check if user already has a subscription (cancelled or not)
         if UserSubscription.objects.filter(user=user).exists():
             return Response({
                 'status': 'a subscription is currently active. update subscription instead'
-            })
+            }, status=400)
 
         # If no subscription exists, try to create card
         result = _create_card(card_number, cardholder_name, expiration_date_str, cvv)
         if result[1] != 'success':
             return Response({
                 result[0]: result[1]
-            })
+            }, status=400)
 
         card = result[2]
         # Create user subscription object
@@ -78,14 +78,14 @@ class UpdateCardView(APIView):
         if not User.objects.filter(email=email).exists():
             return Response({
                 'status': 'no user with this email exists'
-            })
+            }, status=400)
 
         user = User.objects.get(email=email)
         # If user does not have a subscription already, tell them to subscribe first
         if not UserSubscription.objects.filter(user=user).exists():
             return Response({
                 'status': 'no subscription detected. subscribe and set card upon subscription'
-            })
+            }, status=400)
 
         # Otherwise, try to create card
         result = _create_card(card_number, cardholder_name, expiration_date_str, cvv)
@@ -95,9 +95,11 @@ class UpdateCardView(APIView):
             user_subscription = UserSubscription.objects.get(user=user)
             user_subscription.payment_card = card
             user_subscription.save()
+
+        response_code = 200 if result[1] == 'success' else 400
         return Response({
             result[0]: result[1]
-        })
+        }, status=response_code)
 
 
 class PaymentHistoryView(ListAPIView):
@@ -126,7 +128,7 @@ class FuturePaymentView(APIView):
         if not User.objects.filter(email=email).exists():
             return Response({
                 'status': 'no user with this email exists'
-            })
+            }, status=400)
 
         user = User.objects.get(email=email)
 
@@ -166,14 +168,14 @@ class UpdatePaymentView(APIView):
         if not User.objects.filter(email=email).exists():
             return Response({
                 'status': 'no user with this email exists'
-            })
+            }, status=400)
 
         user = User.objects.get(email=email)
 
         if not UserSubscription.objects.filter(user=user).exists():
             return Response({
                 'status': 'user has not subscribed yet'
-            })
+            }, status=400)
 
         # Update subscription plan
         user_subscription = UserSubscription.objects.get(user=user)
@@ -196,21 +198,21 @@ class CancelPaymentView(APIView):
         if not User.objects.filter(email=email).exists():
             return Response({
                 'status': 'no user with this email exists'
-            })
+            }, status=400)
 
         user = User.objects.get(email=email)
 
         if not UserSubscription.objects.filter(user=user).exists():
             return Response({
                 'status': 'user has not subscribed yet'
-            })
+            }, status=400)
 
         # Cancel subscription plan
         user_subscription = UserSubscription.objects.get(user=user)
         if user_subscription.subscription_plan is None:
             return Response({
                 'status': 'subscription plan already cancelled'
-            })
+            }, status=400)
         user_subscription.subscription_plan = None
         user_subscription.save()
 

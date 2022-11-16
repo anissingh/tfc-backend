@@ -23,13 +23,13 @@ class Studio(models.Model):
     def clean(self):
         super().clean()
         errors = {}
-        if self.latitude < -90.0 or self.latitude > 90.0:
+        if self.latitude and (self.latitude < -90.0 or self.latitude > 90.0):
             errors['latitude'] = 'Latitude must be between -90 and 90 degrees.'
-        if self.longitude < -180.0 or self.longitude > 180.0:
+        if self.longitude and (self.longitude < -180.0 or self.longitude > 180.0):
             errors['longitude'] = 'Longitude must be between -180 and 180 degrees.'
-        if not self.phone.isnumeric() or len(self.phone) < 10:
+        if self.phone and (not self.phone.isnumeric() or len(self.phone) < 10):
             errors['phone'] = 'Invalid phone number.'
-        if not validate_postal_code(self.postal_code):
+        if self.postal_code and not validate_postal_code(self.postal_code):
             errors['postal_code'] = 'Invalid postal code.'
 
         if errors:

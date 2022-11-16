@@ -62,7 +62,7 @@ class EnrollOneView(APIView):
         if error:
             return Response({
                 error[0]: error[1]
-            })
+            }, status=400)
 
         user = User.objects.get(email=email)
         date = parse_date(date_str)
@@ -71,7 +71,7 @@ class EnrollOneView(APIView):
         if not ClassInstance.objects.filter(cls=cls, date=date, cancelled=False).exists():
             return Response({
                 'status': 'this class is not offered on this day'
-            })
+            }, status=400)
 
         class_instance = ClassInstance.objects.get(cls=cls, date=date, cancelled=False)
 
@@ -79,19 +79,19 @@ class EnrollOneView(APIView):
         if class_instance.start_date_and_time < get_curr_datetime():
             return Response({
                 'status': 'class has already begun'
-            })
+            }, status=400)
 
         # Make sure class is not full
         if class_instance.enrolled == class_instance.capacity:
             return Response({
                 'status': 'class is full'
-            })
+            }, status=400)
 
         # Make sure user is not already enrolled in this class
         if class_instance in user.enrolled_classes.all():
             return Response({
                 'status': 'user already enrolled in this class'
-            })
+            }, status=400)
 
         # If we make it here, we can enroll the user in the class
         class_instance.enrolled += 1
@@ -115,7 +115,7 @@ class EnrollAllView(APIView):
         if error:
             return Response({
                 error[0]: error[1]
-            })
+            }, status=400)
 
         user = User.objects.get(email=email)
         response_msg = 'success'
@@ -158,7 +158,7 @@ class DropOneView(APIView):
         if error:
             return Response({
                 error[0]: error[1]
-            })
+            }, status=400)
 
         user = User.objects.get(email=email)
         date = parse_date(date_str)
@@ -168,7 +168,7 @@ class DropOneView(APIView):
         if not ClassInstance.objects.filter(cls=cls, date=date).exists():
             return Response({
                 'status': 'this class is not offered on this day'
-            })
+            }, status=400)
 
         class_instance = ClassInstance.objects.get(cls=cls, date=date)
 
@@ -176,13 +176,13 @@ class DropOneView(APIView):
         if class_instance not in user.enrolled_classes.all():
             return Response({
                 'status': 'user not enrolled in this class'
-            })
+            }, status=400)
 
         # Make sure class has not started
         if class_instance.start_date_and_time < get_curr_datetime():
             return Response({
                 'status': 'class has already begun'
-            })
+            }, status=400)
 
         # If we make it here, we can drop the user from this class
         class_instance.enrolled -= 1
@@ -211,7 +211,7 @@ class DropAllView(APIView):
         if error:
             return Response({
                 error[0]: error[1]
-            })
+            }, status=400)
 
         user = User.objects.get(email=email)
         response_msg = 'success'
