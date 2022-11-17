@@ -20,6 +20,23 @@ class UserSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+    def validate(self, data):
+        errors = {}
+        required_fields_extra = ['phone']
+        if not self.partial:
+            for field in required_fields_extra:
+                if field not in data:
+                    errors[field] = 'This field is required.'
+
+        if 'phone' in data:
+            phone = data['phone']
+            if not phone.isnumeric() or len(phone) != 10:
+                errors['phone'] = 'Invalid phone number.'
+
+        if errors:
+            raise serializers.ValidationError(errors)
+        return data
+
     class Meta:
         model = User
         fields = ['email', 'phone', 'password', 'avatar', 'first_name', 'last_name']

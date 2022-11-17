@@ -4,9 +4,11 @@ from subscriptions.models import Payment, SubscriptionPlan, Card
 
 class SubscriptionPlanSerializer(serializers.ModelSerializer):
 
+    frequency = serializers.CharField(source='get_frequency_display')
+
     class Meta:
         model = SubscriptionPlan
-        fields = ['name', 'amount']
+        fields = ['id', 'name', 'amount', 'frequency']
 
 
 class CardSerializer(serializers.ModelSerializer):

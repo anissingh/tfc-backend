@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.core.exceptions import ValidationError
 from subscriptions.models import SubscriptionPlan, UserSubscription, Card, Payment
 from accounts.models import User
-from subscriptions.serializers import PaymentSerializer
+from subscriptions.serializers import PaymentSerializer, SubscriptionPlanSerializer
 from datetime import datetime
 from django.utils.timezone import localdate
 from subscriptions.utils import make_payment, calculate_next_payment_day, get_curr_datetime
@@ -14,6 +14,15 @@ from studios.models import ClassInstance
 
 
 # Create your views here.
+class GetSubscriptionView(ListAPIView):
+    serializer_class = SubscriptionPlanSerializer
+    model = SubscriptionPlan
+    paginate_by = 50
+
+    def get_queryset(self):
+        return SubscriptionPlan.objects.all()
+
+
 class SubscribeView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -136,7 +145,7 @@ class FuturePaymentView(APIView):
         if not UserSubscription.objects.filter(user=user).exists():
             return Response({})
 
-        # If the user's subscription is cancelled, return none
+        # If the user's subscription is cancelled, return a message telling them that
         user_subscription = UserSubscription.objects.get(user=user)
         if not user_subscription.subscription_plan:
             return Response({
@@ -147,6 +156,8 @@ class FuturePaymentView(APIView):
         payment_info = {
             'next_payment_day': user_subscription.next_payment_day,
             'amount': user_subscription.amount,
+            'card_number': user_subscription.payment_card.number,
+            'recurrence': user_subscription.subscription_plan.get_frequency_display()
         }
 
         return Response({

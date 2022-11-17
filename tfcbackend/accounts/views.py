@@ -3,8 +3,6 @@ from rest_framework.permissions import IsAuthenticated
 from accounts.serializers import UserSerializer
 
 
-# TODO: Fix edit user view
-
 # Create your views here.
 class CreateUserView(CreateAPIView):
     serializer_class = UserSerializer

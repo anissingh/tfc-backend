@@ -1,6 +1,6 @@
 from django.urls import path
 from subscriptions.views import SubscribeView, UpdateCardView, PaymentHistoryView,\
-    FuturePaymentView, UpdatePaymentView, CancelPaymentView
+    FuturePaymentView, UpdatePaymentView, CancelPaymentView, GetSubscriptionView
 
 app_name = 'subscriptions'
 
@@ -11,4 +11,5 @@ urlpatterns = [
     path('future-payments/', FuturePaymentView.as_view()),
     path('update/<int:plan_id>/', UpdatePaymentView.as_view()),
     path('cancel/', CancelPaymentView.as_view()),
+    path('plans/all/', GetSubscriptionView.as_view()),
 ]

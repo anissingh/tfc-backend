@@ -3,8 +3,6 @@ from django.db import models
 from accounts.models import User
 from django.utils.timezone import localdate
 
-# TODO: Do not allow users to drop/enroll classes without a subscription
-
 
 # Create your models here.
 class SubscriptionPlan(models.Model):
@@ -52,11 +50,11 @@ class Card(models.Model):
     def clean(self):
         super().clean()
         errors = {}
-        if len(self.number) < 13 or len(self.number) > 19 or not self.number.isnumeric():
+        if self.numebr and (len(self.number) < 13 or len(self.number) > 19 or not self.number.isnumeric()):
             errors['number'] = 'Card number invalid.'
-        if len(self.cvv) != 3 or not self.cvv.isnumeric():
+        if self.cvv and (len(self.cvv) != 3 or not self.cvv.isnumeric()):
             errors['cvv'] = 'CVV invalid'
-        if self.expiration_date < localdate():
+        if self.expiration_date and self.expiration_date < localdate():
             errors['expiration_date'] = 'Card has expired'
 
         if errors:

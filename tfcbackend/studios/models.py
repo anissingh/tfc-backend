@@ -27,7 +27,7 @@ class Studio(models.Model):
             errors['latitude'] = 'Latitude must be between -90 and 90 degrees.'
         if self.longitude and (self.longitude < -180.0 or self.longitude > 180.0):
             errors['longitude'] = 'Longitude must be between -180 and 180 degrees.'
-        if self.phone and (not self.phone.isnumeric() or len(self.phone) < 10):
+        if self.phone and (not self.phone.isnumeric() or len(self.phone) != 10):
             errors['phone'] = 'Invalid phone number.'
         if self.postal_code and not validate_postal_code(self.postal_code):
             errors['postal_code'] = 'Invalid postal code.'
@@ -67,7 +67,6 @@ class StudioAmenities(models.Model):
 
 
 class Class(models.Model):
-    # TODO: Change objects upon coach or capacity change. Only filter those with same old coach/cap
     studio = models.ForeignKey(to=Studio, on_delete=models.CASCADE)
     name = models.CharField(max_length=200)
     description = models.TextField()
@@ -81,9 +80,9 @@ class Class(models.Model):
         super().clean()
         errors = {}
         old = type(self).objects.get(pk=self.pk) if self.pk else None
-        if self.end_date <= self.start_date:
+        if self.end_date and self.start_date and self.end_date <= self.start_date:
             errors['end_date'] = 'End date must be after the start date'
-        if self.start_date < localdate():
+        if self.start_date and self.start_date < localdate():
             errors['start_date'] = 'Start date must be at least current date'
         if old and self.capacity < old.capacity:
             errors['capacity'] = 'Cannot reduce capacity of class'
@@ -152,7 +151,7 @@ class ClassTime(models.Model):
     def clean(self):
         super().clean()
         errors = {}
-        if self.end_time <= self.start_time:
+        if self.end_time and self.start_time and self.end_time <= self.start_time:
             errors['end_time'] = 'End time must be after start time.'
 
         if errors:
@@ -175,10 +174,6 @@ class ClassTime(models.Model):
 
 
 class ClassInstance(models.Model):
-    # TODO: Do not allow cancelling a class if it has happened already? Reason is in history
-    # TODO: we need to be able to remember that the user took this class
-    # TODO: If all classes cancelled, delete class
-    # TODO: Make name not editable (because of searching through studios for class name)
     cls = models.ForeignKey(to=Class, on_delete=models.CASCADE, verbose_name='Class Name')
     date = models.DateField()
     start_date_and_time = models.DateTimeField()
@@ -192,9 +187,9 @@ class ClassInstance(models.Model):
     def clean(self):
         super().clean()
         errors = {}
-        if self.end_time <= self.start_time:
+        if self.end_time and self.start_time and self.end_time <= self.start_time:
             errors['end_time'] = 'End time must be after start time.'
-        if self.enrolled > self.capacity:
+        if self.enrolled and self.capacity and self.enrolled > self.capacity:
             errors['capacity'] = 'Too little capacity for users enrolled in this class.'
 
         if errors:
