@@ -1,12 +1,11 @@
-from studios.serializers import StudioSerializer
-from rest_framework.generics import RetrieveAPIView
+from studios.serializers import StudioSerializer, StudioImageSerializer, StudioAmenitiesSerializer
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from studios.serializers import ClassInstanceSerializer
 from django.shortcuts import get_object_or_404
-from studios.models import Studio, Class, ClassInstance
+from studios.models import Studio, Class, ClassInstance, StudioImage, StudioAmenities
 from accounts.models import User
 from studios.calculator import get_nearby_locs, convert_date_to_django_date
 from django.utils.dateparse import parse_date
@@ -17,17 +16,28 @@ from subscriptions.models import UserSubscription
 
 
 # Create your views here.
-class StudioInfoView(RetrieveAPIView):
-    serializer_class = StudioSerializer
+class StudioInfoView(APIView):
 
-    def get_object(self):
-        return get_object_or_404(Studio, id=self.kwargs['studio_id'])
+    def get(self, request, *args, **kwargs):
+        studio = get_object_or_404(Studio, id=self.kwargs['studio_id'])
+        studio_images = StudioImage.objects.filter(studio=studio)
+        studio_amenities = StudioAmenities.objects.filter(studio=studio)
+
+        studio_serializer = StudioSerializer(studio)
+        studio_images_serializer = StudioImageSerializer(studio_images, many=True)
+        studio_amenities_serializer = StudioAmenitiesSerializer(studio_amenities, many=True)
+
+        return Response({
+            'studio_info': studio_serializer.data,
+            'studio_images': studio_images_serializer.data,
+            'studio_amenities': studio_amenities_serializer.data
+        })
 
 
 class ClosestStudioView(ListAPIView):
     serializer_class = StudioSerializer
     model = Studio
-    paginate_by = 100
+    paginate_by = 20
 
     def get_queryset(self):
         latitude = self.request.GET.get('lat', '')

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from studios.models import Studio, ClassInstance, Class
+from studios.models import Studio, ClassInstance, Class, StudioImage, StudioAmenities
 
 
 class StudioSerializer(serializers.ModelSerializer):
@@ -7,6 +7,20 @@ class StudioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Studio
         fields = ['id', 'name', 'address', 'latitude', 'longitude', 'postal_code', 'phone']
+
+
+class StudioImageSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = StudioImage
+        fields = ['image']
+
+
+class StudioAmenitiesSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = StudioAmenities
+        fields = ['type', 'quantity']
 
 
 class ClassSerializer(serializers.ModelSerializer):
