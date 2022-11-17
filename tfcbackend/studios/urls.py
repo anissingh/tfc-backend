@@ -13,9 +13,9 @@ urlpatterns = [
     path('classes/<int:class_id>/enroll/', EnrollAllView.as_view()),
     path('classes/<int:class_id>/drop/one/', DropOneView.as_view()),
     path('classes/<int:class_id>/drop/', DropAllView.as_view()),
-    path('<int:studio_id>/class-schedule/', StudioClassScheduleView.as_view()),
-    path('users/<int:user_id>/class-schedule/', UserClassScheduleView.as_view()),
-    path('users/<int:user_id>/class-history/', UserClassHistoryView.as_view()),
+    path('<int:studio_id>/schedule/', StudioClassScheduleView.as_view()),
+    path('classes/user/schedule/<int:user_id>/', UserClassScheduleView.as_view()),
+    path('classes/user/history/<int:user_id>/', UserClassHistoryView.as_view()),
     path('search/', SearchStudioView.as_view()),
     path('<int:studio_id>/classes/search/', SearchStudioClassSchedule.as_view()),
 ]

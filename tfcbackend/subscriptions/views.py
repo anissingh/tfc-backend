@@ -130,17 +130,10 @@ class PaymentHistoryView(ListAPIView):
 class FuturePaymentView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request, *args, **kwargs):
-        email = request.data.get('email', '')
+    def get(self, request, *args, **kwargs):
+        user = get_object_or_404(User, id=self.kwargs['user_id'])
 
         # Validate request
-        if not User.objects.filter(email=email).exists():
-            return Response({
-                'status': 'no user with this email exists'
-            }, status=400)
-
-        user = User.objects.get(email=email)
-
         # If the user has not subscribed, they have no future payments
         if not UserSubscription.objects.filter(user=user).exists():
             return Response({})

@@ -34,7 +34,7 @@ class SearchStudioView(ListAPIView):
             studios = studio_amenities
         if len(class_names) > 0:
             for class_name in class_names:
-                studio_class_names |= studios.filter(class__name__iexacxt=class_name)
+                studio_class_names |= studios.filter(class__name__iexact=class_name)
             studios = studio_class_names
         if len(coaches) > 0:
             classes_with_coach = ClassInstance.objects.none()

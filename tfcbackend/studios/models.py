@@ -14,7 +14,7 @@ class Studio(models.Model):
     address = models.CharField(max_length=200)
     latitude = models.DecimalField(max_digits=10, decimal_places=8)
     longitude = models.DecimalField(max_digits=11, decimal_places=8)
-    postal_code = models.CharField(max_length=6, unique=True)
+    postal_code = models.CharField(max_length=6)
     phone = models.CharField(max_length=10)
 
     def __str__(self):
@@ -38,6 +38,10 @@ class Studio(models.Model):
     def save(self, *args, **kwargs):
         self.clean()
         super().save()
+
+    def delete(self, using=None, keep_parents=False):
+        delete_all_associated_classes(self)
+        super().delete()
 
     class Meta:
         verbose_name = 'Studio'
@@ -67,7 +71,7 @@ class StudioAmenities(models.Model):
 
 
 class Class(models.Model):
-    studio = models.ForeignKey(to=Studio, on_delete=models.CASCADE)
+    studio = models.ForeignKey(to=Studio, on_delete=models.SET_NULL, null=True)
     name = models.CharField(max_length=200)
     description = models.TextField()
     coach = models.CharField(max_length=200)
@@ -114,6 +118,8 @@ class Class(models.Model):
 
     def delete(self, using=None, keep_parents=False):
         cancel_all_future_classes(self)
+        self.cancel_all_future = True
+        self.save()
 
     def __str__(self):
         return f'{self.name}'
@@ -230,10 +236,10 @@ def update_class_instances_upon_time_change(ct, old_ct):
     # Get old class instances
     start_time = old_ct.start_time
     end_time = old_ct.end_time
-    filter_date = localdate()
+    filter_date = get_curr_datetime()
 
     old_cis = ClassInstance.objects.filter(start_time=start_time, end_time=end_time,
-                                           date__gte=filter_date)
+                                           start_date_and_time__gt=filter_date)
     for ci in old_cis:
         ci.start_time = ct.start_time
         ci.end_time = ct.end_time
@@ -301,6 +307,12 @@ def update_capacity(cls, old_capacity):
                                                 capacity=old_capacity)
     for ci in ci_to_update:
         ci.update_capacity(cls.capacity)
+
+
+def delete_all_associated_classes(studio):
+    classes = Class.objects.filter(studio=studio)
+    for cls in classes:
+        cls.delete()
 
 
 def validate_postal_code(postal_code):

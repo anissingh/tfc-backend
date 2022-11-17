@@ -66,14 +66,18 @@ class ClassAdmin(admin.ModelAdmin):
     def has_change_permission(self, request, obj=None):
         if obj and obj.end_date < localdate():
             return False
+        elif obj and not obj.studio:
+            return False
         else:
             return super().has_change_permission(request, obj)
 
 
 class ClassInstanceAdmin(admin.ModelAdmin):
-    readonly_fields = []
+    readonly_fields = ['cls', 'enrolled']
     list_display = ['cls', 'date', 'start_time', 'end_time', 'enrolled', 'capacity', 'coach',
                     'active']
+    fields = ['cls', 'date', 'start_time', 'end_time', 'enrolled', 'capacity', 'coach',
+              'cancelled']
 
     @admin.display(ordering='cls__name', description='Class Name')
     def get_author(self, obj):
@@ -91,6 +95,8 @@ class ClassInstanceAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         if obj and obj.start_date_and_time < get_curr_datetime():
+            return False
+        elif obj and obj.cls and not obj.cls.studio:
             return False
         else:
             return super().has_change_permission(request, obj)

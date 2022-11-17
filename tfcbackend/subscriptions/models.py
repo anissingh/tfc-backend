@@ -50,7 +50,7 @@ class Card(models.Model):
     def clean(self):
         super().clean()
         errors = {}
-        if self.numebr and (len(self.number) < 13 or len(self.number) > 19 or not self.number.isnumeric()):
+        if self.number and (len(self.number) < 13 or len(self.number) > 19 or not self.number.isnumeric()):
             errors['number'] = 'Card number invalid.'
         if self.cvv and (len(self.cvv) != 3 or not self.cvv.isnumeric()):
             errors['cvv'] = 'CVV invalid'
