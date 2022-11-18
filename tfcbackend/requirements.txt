@@ -5,7 +5,7 @@ Pillow==9.3.0
 djangorestframework-simplejwt==5.2.2
 
 # Installed as a result of installing Django.
-asgrief==3.5.2
+asgiref==3.5.2
 sqlparse==0.4.3
 
 # Installed as a result of installing Django REST Framework.

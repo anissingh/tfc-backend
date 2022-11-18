@@ -54,7 +54,7 @@ class Card(models.Model):
             errors['number'] = 'Card number invalid.'
         if self.cvv and (len(self.cvv) != 3 or not self.cvv.isnumeric()):
             errors['cvv'] = 'CVV invalid'
-        if self.expiration_date and self.expiration_date < localdate():
+        if self.expiration_date and self.expiration_date <= localdate():
             errors['expiration_date'] = 'Card has expired'
 
         if errors:

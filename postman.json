@@ -1,0 +1,973 @@
+{
+	"info": {
+		"_postman_id": "76edbabb-7fa1-480c-a126-7692a49f8e99",
+		"name": "Project Backend Postman Collection",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "23898392"
+	},
+	"item": [
+		{
+			"name": "Register User (Sign Up)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "email",
+							"value": "",
+							"description": "Account email",
+							"type": "text"
+						},
+						{
+							"key": "phone",
+							"value": "",
+							"description": "Account phone number",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "",
+							"description": "Account password",
+							"type": "text"
+						},
+						{
+							"key": "avatar",
+							"description": "Account profile picture",
+							"type": "file",
+							"src": []
+						},
+						{
+							"key": "first_name",
+							"value": "",
+							"description": "Account first name",
+							"type": "text"
+						},
+						{
+							"key": "last_name",
+							"value": "",
+							"description": "Account last name",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "localhost:{{port}}/accounts/register/",
+					"host": [
+						"localhost"
+					],
+					"port": "{{port}}",
+					"path": [
+						"accounts",
+						"register",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Generate User Login Token",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "email",
+							"value": "",
+							"description": "Email of acccount you wish to generate token for.",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "",
+							"description": "Password of account you wish to generate token for.",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "localhost:{{port}}/accounts/api/token/",
+					"host": [
+						"localhost"
+					],
+					"port": "{{port}}",
+					"path": [
+						"accounts",
+						"api",
+						"token",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Edit User Profile",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "email",
+							"value": "",
+							"description": "New email that you wish to set for your account.",
+							"type": "text"
+						},
+						{
+							"key": "phone",
+							"value": "",
+							"description": "New phone number that you wish to set for your account.",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "",
+							"description": "New password that you wish to set for your account.",
+							"type": "text"
+						},
+						{
+							"key": "avatar",
+							"description": "New profile picture that you wish to set for your account.",
+							"type": "file",
+							"src": []
+						},
+						{
+							"key": "first_name",
+							"value": "",
+							"description": "New first name that you wish to set for your account.",
+							"type": "text"
+						},
+						{
+							"key": "last_name",
+							"value": "",
+							"description": "New last name that you wish to set for your account.",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "localhost:{{port}}/accounts/edit/",
+					"host": [
+						"localhost"
+					],
+					"port": "{{port}}",
+					"path": [
+						"accounts",
+						"edit",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "View User Information",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "email",
+							"value": "",
+							"description": "Email of user whose information you wish to view.",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "localhost:{{port}}/accounts/view/",
+					"host": [
+						"localhost"
+					],
+					"port": "{{port}}",
+					"path": [
+						"accounts",
+						"view",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Studio Information",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:{{port}}/studios/1/info/",
+					"host": [
+						"localhost"
+					],
+					"port": "{{port}}",
+					"path": [
+						"studios",
+						"1",
+						"info",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Closest Studios",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:{{port}}/studios/closest/?lat=&long=&page=",
+					"host": [
+						"localhost"
+					],
+					"port": "{{port}}",
+					"path": [
+						"studios",
+						"closest",
+						""
+					],
+					"query": [
+						{
+							"key": "lat",
+							"value": "",
+							"description": "Latitude to get closest studios from."
+						},
+						{
+							"key": "long",
+							"value": "",
+							"description": "Longitude to get closest studios from."
+						},
+						{
+							"key": "page",
+							"value": "",
+							"description": "Page number of paginated data that you wish to view."
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Subscribe User",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "email",
+							"value": "",
+							"description": "Email of user you wish to subscribe.",
+							"type": "text"
+						},
+						{
+							"key": "card_number",
+							"value": "",
+							"description": "Card number you wish to pay with.",
+							"type": "text"
+						},
+						{
+							"key": "cardholder_name",
+							"value": "",
+							"description": "Name on card you wish to pay with.",
+							"type": "text"
+						},
+						{
+							"key": "expiration_date",
+							"value": "",
+							"description": "Expiration date on card you wish to pay with.",
+							"type": "text"
+						},
+						{
+							"key": "cvv",
+							"value": "",
+							"description": "CVV on card you wish to pay with.",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "localhost:{{port}}/subscriptions/subscribe/1/",
+					"host": [
+						"localhost"
+					],
+					"port": "{{port}}",
+					"path": [
+						"subscriptions",
+						"subscribe",
+						"1",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Enroll in One Class",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "email",
+							"value": "",
+							"description": "Email of user you wish to enroll in a class.",
+							"type": "text"
+						},
+						{
+							"key": "date",
+							"value": "",
+							"description": "Date that class you wish to enroll in occurs on.",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "localhost:{{port}}/studios/classes/1/enroll/one/",
+					"host": [
+						"localhost"
+					],
+					"port": "{{port}}",
+					"path": [
+						"studios",
+						"classes",
+						"1",
+						"enroll",
+						"one",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Enroll in All Classes",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "email",
+							"value": "",
+							"description": "Email of user you wish to enroll in all instanes of this class.",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "localhost:{{port}}/studios/classes/1/enroll/",
+					"host": [
+						"localhost"
+					],
+					"port": "{{port}}",
+					"path": [
+						"studios",
+						"classes",
+						"1",
+						"enroll",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Drop One Class",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "email",
+							"value": "",
+							"description": "Email of user you wish to drop class for.",
+							"type": "text"
+						},
+						{
+							"key": "date",
+							"value": "",
+							"description": "Date that this class occurs on that you wish to drop.",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "localhost:{{port}}/studios/classes/1/drop/one/",
+					"host": [
+						"localhost"
+					],
+					"port": "{{port}}",
+					"path": [
+						"studios",
+						"classes",
+						"1",
+						"drop",
+						"one",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Drop All Classes",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "email",
+							"value": "",
+							"description": "Email of user you wish to drop all instances of this class for.",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "localhost:{{port}}/studios/classes/1/drop/",
+					"host": [
+						"localhost"
+					],
+					"port": "{{port}}",
+					"path": [
+						"studios",
+						"classes",
+						"1",
+						"drop",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Studio Class Schedule",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:{{port}}/studios/1/schedule/?page=",
+					"host": [
+						"localhost"
+					],
+					"port": "{{port}}",
+					"path": [
+						"studios",
+						"1",
+						"schedule",
+						""
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "",
+							"description": "Page number of paginated data that you wish to view."
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get User Class Schedule",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "localhost:{{port}}/studios/classes/user/schedule/2/?page=",
+					"host": [
+						"localhost"
+					],
+					"port": "{{port}}",
+					"path": [
+						"studios",
+						"classes",
+						"user",
+						"schedule",
+						"2",
+						""
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "",
+							"description": "Page number of paginated data that you wish to view."
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get User Class History",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "localhost:{{port}}/studios/classes/user/history/2/?page=1",
+					"host": [
+						"localhost"
+					],
+					"port": "{{port}}",
+					"path": [
+						"studios",
+						"classes",
+						"user",
+						"history",
+						"2",
+						""
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "1",
+							"description": "Page number of paginated data that you wish to view."
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Search/Filter Studios",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:{{port}}/studios/search/?name=&amenity=&class-name=&coach=&page=",
+					"host": [
+						"localhost"
+					],
+					"port": "{{port}}",
+					"path": [
+						"studios",
+						"search",
+						""
+					],
+					"query": [
+						{
+							"key": "name",
+							"value": "",
+							"description": "Name of studio you wish to filter for."
+						},
+						{
+							"key": "amenity",
+							"value": "",
+							"description": "Amenity in studio you wish to filter for."
+						},
+						{
+							"key": "class-name",
+							"value": "",
+							"description": "Class name in studio you wish to filter for."
+						},
+						{
+							"key": "coach",
+							"value": "",
+							"description": "Coach that teaches a class in studio you wish to filter for."
+						},
+						{
+							"key": "page",
+							"value": "",
+							"description": "Page number of paginated data that you wish to view."
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Search/Filter Studio Class Schedule",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:{{port}}/studios/1/classes/search/?class-name=&coach=&date=&start-time=&end-time=&page",
+					"host": [
+						"localhost"
+					],
+					"port": "{{port}}",
+					"path": [
+						"studios",
+						"1",
+						"classes",
+						"search",
+						""
+					],
+					"query": [
+						{
+							"key": "class-name",
+							"value": "",
+							"description": "Filter for studios with classes with this name."
+						},
+						{
+							"key": "coach",
+							"value": "",
+							"description": "Filter for studios with classes taught by coaches with this name."
+						},
+						{
+							"key": "date",
+							"value": "",
+							"description": "Filter for studios with classes on this date."
+						},
+						{
+							"key": "start-time",
+							"value": "",
+							"description": "Filter for studios whose classes start on or after this time."
+						},
+						{
+							"key": "end-time",
+							"value": "",
+							"description": "Filter for studios whose classe end at or before this time."
+						},
+						{
+							"key": "page",
+							"value": null,
+							"description": "Page number of paginated data that you wish to view."
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Payment Card",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "email",
+							"value": "",
+							"description": "Email of user whose card you wish to update.",
+							"type": "text"
+						},
+						{
+							"key": "card_number",
+							"value": "",
+							"description": "Card number of updated card.",
+							"type": "text"
+						},
+						{
+							"key": "cardholder_name",
+							"value": "",
+							"description": "Card holder name on updated card.",
+							"type": "text"
+						},
+						{
+							"key": "expiration_date",
+							"value": "",
+							"description": "Expiration date on updated card.",
+							"type": "text"
+						},
+						{
+							"key": "cvv",
+							"value": "",
+							"description": "CVV on updated card.",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "localhost:{{port}}/subscriptions/update/card/",
+					"host": [
+						"localhost"
+					],
+					"port": "{{port}}",
+					"path": [
+						"subscriptions",
+						"update",
+						"card",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get User Payment History",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "localhost:{{port}}/subscriptions/user/2/payments/history/?page=",
+					"host": [
+						"localhost"
+					],
+					"port": "{{port}}",
+					"path": [
+						"subscriptions",
+						"user",
+						"2",
+						"payments",
+						"history",
+						""
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "",
+							"description": "Page number of paginated data that you wish to view."
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get User Future Payments",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "localhost:{{port}}/subscriptions/user/2/payments/future/?page=",
+					"host": [
+						"localhost"
+					],
+					"port": "{{port}}",
+					"path": [
+						"subscriptions",
+						"user",
+						"2",
+						"payments",
+						"future",
+						""
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "",
+							"description": "Page number of paginated data that you wish to view."
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update User Subscription Plan",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "email",
+							"value": "",
+							"description": "Email of user whose subscription you wish to update.",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "localhost:{{port}}/subscriptions/update/plan/1/",
+					"host": [
+						"localhost"
+					],
+					"port": "{{port}}",
+					"path": [
+						"subscriptions",
+						"update",
+						"plan",
+						"1",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Cancel User Subscription",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "email",
+							"value": "",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "localhost:{{port}}/subscriptions/cancel/",
+					"host": [
+						"localhost"
+					],
+					"port": "{{port}}",
+					"path": [
+						"subscriptions",
+						"cancel",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get All Subscription Plans",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:{{port}}/subscriptions/plans/all/?page=",
+					"host": [
+						"localhost"
+					],
+					"port": "{{port}}",
+					"path": [
+						"subscriptions",
+						"plans",
+						"all",
+						""
+					],
+					"query": [
+						{
+							"key": "page",
+							"value": "",
+							"description": "Page number of paginated data that you wish to view."
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "port",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

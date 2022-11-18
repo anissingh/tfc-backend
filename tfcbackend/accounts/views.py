@@ -1,6 +1,9 @@
 from rest_framework.generics import CreateAPIView, UpdateAPIView
 from rest_framework.permissions import IsAuthenticated
-from accounts.serializers import UserSerializer
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from accounts.serializers import UserSerializer, UserIDSerializer
+from accounts.models import User
 
 
 # Create your views here.
@@ -14,3 +17,23 @@ class EditUserView(UpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class GetUserView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        email = request.data.get('email', '')
+        if not User.objects.filter(email=email).exists():
+            return Response({
+                'status': 'user does not exist'
+            }, status=400)
+
+        user = User.objects.get(email=email)
+        user_serializer = UserIDSerializer(user)
+
+        return Response({
+            'status': 'success',
+            'user-info': user_serializer.data
+        })

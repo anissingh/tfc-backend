@@ -20,7 +20,7 @@ class GetSubscriptionView(ListAPIView):
     paginate_by = 50
 
     def get_queryset(self):
-        return SubscriptionPlan.objects.all()
+        return SubscriptionPlan.objects.all().order_by('id')
 
 
 class SubscribeView(APIView):

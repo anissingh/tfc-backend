@@ -44,7 +44,7 @@ class SearchStudioView(ListAPIView):
             studio_coaches |= studios.filter(class__in=classes)
             studios = studio_coaches
 
-        return studios.distinct()
+        return studios.distinct().order_by('id')
 
 
 class SearchStudioClassSchedule(ListAPIView):
@@ -97,4 +97,4 @@ class SearchStudioClassSchedule(ListAPIView):
         if end_time != 'E':
             class_instances = class_instances.filter(end_time__lte=end_time)
 
-        return class_instances
+        return class_instances.distinct().order_by('id')
