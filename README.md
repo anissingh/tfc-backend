@@ -6,4 +6,4 @@ To run the server, you can install Django and the required packages manually, or
   - In the directory containing all the repo files, run ```source startup.sh```. This should create and activate a virtual environment. 
   - Run ```./run.sh```
   
- Note that using the provided scripts automatically creates a superuser with email ```admin@gmail.com``` and password ``password```.
+ Note that using the provided scripts automatically creates a superuser with email ```admin@gmail.com``` and password ```password```.
