@@ -3,14 +3,32 @@ from studios.serializers import StudioSerializer, ClassInstanceSerializer
 from studios.models import Studio, ClassInstance, Class
 from django.shortcuts import get_object_or_404
 from datetime import datetime
+from studios.utils import get_curr_datetime
+from studios.pagination_classes import ClassSchedulePagination, StudioPagination
+from studios.calculator import get_nearby_locs_qs
 
 
 class SearchStudioView(ListAPIView):
     serializer_class = StudioSerializer
     model = Studio
-    paginate_by = 100
+    pagination_class = StudioPagination
 
     def get_queryset(self):
+        latitude = self.request.GET.get('lat', '')
+        longitude = self.request.GET.get('long', '')
+
+        if latitude == '' or longitude == '':
+            return Studio.objects.none()
+
+        try:
+            f_lat = float(latitude)
+            f_long = float(longitude)
+        except ValueError:
+            return Studio.objects.none()
+
+        if not (-90.0 <= f_lat <= 90.0 and -180.0 <= f_long <= 180.0):
+            return Studio.objects.none()
+
         # Note: Multiple searches treated as AND requirements not OR requirements
         names = list(self.request.GET.getlist('name'))
         amenities = list(self.request.GET.getlist('amenity'))
@@ -44,13 +62,14 @@ class SearchStudioView(ListAPIView):
             studio_coaches |= studios.filter(class__in=classes)
             studios = studio_coaches
 
-        return studios.distinct().order_by('id')
+        qs = get_nearby_locs_qs(f_lat, f_long, studios.distinct())
+        return qs
 
 
 class SearchStudioClassSchedule(ListAPIView):
     serializer_class = ClassInstanceSerializer
     model = ClassInstance
-    paginate_by = 100
+    pagination_class = ClassSchedulePagination
 
     def get_queryset(self):
         # Parse input
@@ -77,6 +96,7 @@ class SearchStudioClassSchedule(ListAPIView):
             end_time = 'E'
 
         # Search
+        curr_date_and_time = get_curr_datetime()
         classes = list(Class.objects.filter(studio=studio))
         class_instances = ClassInstance.objects.filter(cls__in=classes)
         ci_class_names = ClassInstance.objects.none()
@@ -97,4 +117,4 @@ class SearchStudioClassSchedule(ListAPIView):
         if end_time != 'E':
             class_instances = class_instances.filter(end_time__lte=end_time)
 
-        return class_instances.distinct().order_by('id')
+        return class_instances.filter(cancelled=False, start_date_and_time__gte=curr_date_and_time).distinct().order_by('start_date_and_time')

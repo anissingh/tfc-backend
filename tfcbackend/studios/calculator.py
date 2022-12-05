@@ -20,6 +20,23 @@ def get_nearby_locs(latitude, longitude, max_dist=None):
     return qs
 
 
+def get_nearby_locs_qs(latitude, longitude, start_qs, max_dist=None):
+    # Great circle distance formula
+    gcd_formula = "6371 * acos(least(greatest(\
+        cos(radians(%s)) * cos(radians(latitude)) \
+        * cos(radians(longitude) - radians(%s)) + \
+        sin(radians(%s)) * sin(radians(latitude)) \
+        , -1), 1))"
+    distance_raw_sql = RawSQL(
+        gcd_formula,
+        (latitude, longitude, latitude)
+    )
+    qs = start_qs.annotate(distance=distance_raw_sql).order_by('distance')
+    if max_dist is not None:
+        qs = qs.filter(distance__lt=max_dist)
+    return qs
+
+
 def convert_date_to_django_date(date_int):
     if date_int <= 5:
         return date_int + 2

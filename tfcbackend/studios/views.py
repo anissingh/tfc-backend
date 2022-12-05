@@ -1,11 +1,12 @@
-from studios.serializers import StudioSerializer, StudioImageSerializer, StudioAmenitiesSerializer
+from studios.serializers import StudioSerializer, StudioImageSerializer, StudioAmenitiesSerializer, \
+    KeywordSerializer
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from studios.serializers import ClassInstanceSerializer
 from django.shortcuts import get_object_or_404
-from studios.models import Studio, Class, ClassInstance, StudioImage, StudioAmenities
+from studios.models import Studio, Class, ClassInstance, StudioImage, StudioAmenities, Keyword
 from accounts.models import User
 from studios.calculator import get_nearby_locs, convert_date_to_django_date
 from django.utils.dateparse import parse_date
@@ -13,6 +14,8 @@ from django.utils.timezone import now, localtime, localdate, make_aware
 import datetime
 from studios.utils import get_curr_datetime
 from subscriptions.models import UserSubscription
+from studios.pagination_classes import ClassSchedulePagination, UserClassSchedulePagination, \
+    StudioPagination
 
 
 # Create your views here.
@@ -37,7 +40,7 @@ class StudioInfoView(APIView):
 class ClosestStudioView(ListAPIView):
     serializer_class = StudioSerializer
     model = Studio
-    paginate_by = 20
+    pagination_class = StudioPagination
 
     def get_queryset(self):
         latitude = self.request.GET.get('lat', '')
@@ -255,7 +258,7 @@ class DropAllView(APIView):
 class StudioClassScheduleView(ListAPIView):
     serializer_class = ClassInstanceSerializer
     model = ClassInstance
-    paginate_by = 100
+    pagination_class = ClassSchedulePagination
 
     def get_queryset(self):
         studio = get_object_or_404(Studio, id=self.kwargs['studio_id'])
@@ -271,26 +274,69 @@ class UserClassScheduleView(ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ClassInstanceSerializer
     model = ClassInstance
-    paginate_by = 100
+    pagination_class = UserClassSchedulePagination
 
     def get_queryset(self):
         user = get_object_or_404(User, id=self.kwargs['user_id'])
         curr_dt = get_curr_datetime()
         class_instances = user.enrolled_classes.all().filter(start_date_and_time__gte=curr_dt)
-        return class_instances.order_by('start_date_and_time')
+        excluded_classes = []
+        for cls_instance in class_instances:
+            if not cls_instance.cls.studio:
+                excluded_classes.append(cls_instance.cls)
+
+        return class_instances.exclude(cls__in=excluded_classes).order_by('start_date_and_time')
 
 
 class UserClassHistoryView(ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ClassInstanceSerializer
     model = ClassInstance
-    paginate_by = 100
+    pagination_class = UserClassSchedulePagination
 
     def get_queryset(self):
         user = get_object_or_404(User, id=self.kwargs['user_id'])
         curr_dt = get_curr_datetime()
         class_instances = user.enrolled_classes.all().filter(start_date_and_time__lt=curr_dt)
-        return class_instances.order_by('start_date_and_time')
+        excluded_classes = []
+        for cls_instance in class_instances:
+            if not cls_instance.cls.studio:
+                excluded_classes.append(cls_instance.cls)
+
+        return class_instances.exclude(cls__in=excluded_classes).order_by('-start_date_and_time')
+
+
+class GetClassKeywordsView(APIView):
+
+    def get(self, request, *args, **kwargs):
+        cls = get_object_or_404(Class, id=self.kwargs['cls_id'])
+        keywords = Keyword.objects.filter(cls=cls)
+        keywordSerializer = KeywordSerializer(keywords, many=True)
+
+        return Response({
+            'keywords': keywordSerializer.data
+        })
+
+
+class GetClassDescriptionView(APIView):
+
+    def get(self, request, *args, **kwargs):
+        cls = get_object_or_404(Class, id=self.kwargs['cls_id'])
+
+        return Response({
+            'studio_name': cls.studio.name,
+            'description': cls.description
+        })
+
+
+class GetClassStudioView(APIView):
+
+    def get(self, request, *args, **kwargs):
+        cls = get_object_or_404(Class, id=self.kwargs['cls_id'])
+
+        return Response({
+            'studio_name': cls.studio.name
+        })
 
 
 def _validate_enroll_or_drop_one_request(cls, email, date_str):
@@ -299,7 +345,7 @@ def _validate_enroll_or_drop_one_request(cls, email, date_str):
 
     user = User.objects.get(email=email)
     if not UserSubscription.objects.filter(user=user).exists():
-        return ('status', 'no subscription')
+        return ('status', 'an active subscription is needed to perform this action')
 
     date = parse_date(date_str)
     if not date:
@@ -322,6 +368,6 @@ def _validate_enroll_or_drop_all_request(email):
 
     user = User.objects.get(email=email)
     if not UserSubscription.objects.filter(user=user).exists():
-        return ('status', 'no subscription')
+        return ('status', 'an active subscription is needed to perform this action')
 
     return None

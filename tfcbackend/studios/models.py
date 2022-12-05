@@ -86,7 +86,7 @@ class Class(models.Model):
         old = type(self).objects.get(pk=self.pk) if self.pk else None
         if self.end_date and self.start_date and self.end_date <= self.start_date:
             errors['end_date'] = 'End date must be after the start date'
-        if self.start_date and self.start_date < localdate():
+        if not self.pk and self.start_date and self.start_date < localdate():
             errors['start_date'] = 'Start date must be at least current date'
         if old and self.capacity < old.capacity:
             errors['capacity'] = 'Cannot reduce capacity of class'

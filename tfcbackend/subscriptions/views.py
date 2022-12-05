@@ -6,21 +6,22 @@ from django.shortcuts import get_object_or_404
 from django.core.exceptions import ValidationError
 from subscriptions.models import SubscriptionPlan, UserSubscription, Card, Payment
 from accounts.models import User
-from subscriptions.serializers import PaymentSerializer, SubscriptionPlanSerializer
+from subscriptions.serializers import PaymentSerializer, SubscriptionPlanSerializer, SubscriptionPlanDescriptionSerializer, CardSerializer
 from datetime import datetime
 from django.utils.timezone import localdate
 from subscriptions.utils import make_payment, calculate_next_payment_day, get_curr_datetime
 from studios.models import ClassInstance
+from subscriptions.pagination_classes import SubscriptionPlanPagination
 
 
 # Create your views here.
 class GetSubscriptionView(ListAPIView):
-    serializer_class = SubscriptionPlanSerializer
+    serializer_class = SubscriptionPlanDescriptionSerializer
     model = SubscriptionPlan
-    paginate_by = 50
+    pagination_class = SubscriptionPlanPagination
 
     def get_queryset(self):
-        return SubscriptionPlan.objects.all().order_by('id')
+        return SubscriptionPlan.objects.all().order_by('frequency').order_by('amount')
 
 
 class SubscribeView(APIView):
@@ -46,7 +47,7 @@ class SubscribeView(APIView):
         if UserSubscription.objects.filter(user=user).exists():
             return Response({
                 'status': 'a subscription is currently active. update subscription instead'
-            }, status=400)
+            }, status=406)
 
         # If no subscription exists, try to create card
         result = _create_card(card_number, cardholder_name, expiration_date_str, cvv)
@@ -94,7 +95,7 @@ class UpdateCardView(APIView):
         if not UserSubscription.objects.filter(user=user).exists():
             return Response({
                 'status': 'no subscription detected. subscribe and set card upon subscription'
-            }, status=400)
+            }, status=406)
 
         # Otherwise, try to create card
         result = _create_card(card_number, cardholder_name, expiration_date_str, cvv)
@@ -124,7 +125,7 @@ class PaymentHistoryView(ListAPIView):
         # Only need to filter for user because payment objects only exist if a payment
         # was made in the past
         payments = Payment.objects.filter(user=user)
-        return payments.order_by('date_and_time')
+        return payments.order_by('-date_and_time')
 
 
 class FuturePaymentView(APIView):
@@ -142,7 +143,8 @@ class FuturePaymentView(APIView):
         user_subscription = UserSubscription.objects.get(user=user)
         if not user_subscription.subscription_plan:
             return Response({
-                'status': 'subscription cancelled'
+                'status': 'subscription cancelled',
+                'next_payment_day': user_subscription.next_payment_day,
             })
 
         # Otherwise, get next payment info and return it
@@ -216,7 +218,7 @@ class CancelPaymentView(APIView):
         if user_subscription.subscription_plan is None:
             return Response({
                 'status': 'subscription plan already cancelled'
-            }, status=400)
+            }, status=406)
         user_subscription.subscription_plan = None
         user_subscription.save()
 
@@ -226,6 +228,57 @@ class CancelPaymentView(APIView):
 
         return Response({
             'status': 'success'
+        })
+
+
+class GetUserCard(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        email = request.data.get('email', '')
+
+        # Validate request
+        if not User.objects.filter(email=email).exists():
+            return Response({
+                'status': 'no user with this email exists'
+            }, status=400)
+
+        user = User.objects.get(email=email)
+
+        if not UserSubscription.objects.filter(user=user).exists():
+            return Response({
+                'status': 'user has not subscribed yet'
+            }, status=400)
+
+        user_subscription = UserSubscription.objects.get(user=user)
+
+        card_serializer = CardSerializer(user_subscription.payment_card)
+        return Response({
+            'card': card_serializer.data
+        })
+
+
+class CheckUserActiveSubscription(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        email = request.data.get('email', '')
+
+        # Validate request
+        if not User.objects.filter(email=email).exists():
+            return Response({
+                'status': 'no user with this email exists'
+            }, status=400)
+
+        user = User.objects.get(email=email)
+
+        if not UserSubscription.objects.filter(user=user).exists():
+            return Response({
+                'status': 'user has not subscribed yet'
+            }, status=400)
+
+        return Response({
+            'status': 'user has an active subscription'
         })
 
 
